@@ -278,12 +278,20 @@ $(function () {
 				if (window['_QuickCheckoutAjaxSave']) {
 					window['_QuickCheckoutAjaxSave'].abort();
 				}
-
+					
+					do {
+						// wait!!
+						console.log('wait start');
+						wait(1000);
+						console.log('wait stop');
+					}
+					while (window['_QuickCheckoutAjaxSave']);
+				
 				if (confirm) {
 					loader('.quick-checkout-wrapper', true);
 				}
 
-				var data = {
+				var data = JSON.parse(JSON.stringify({
 					checkout_id: this.checkout_id,
 					account: this.account,
 					order_data: this.order_data,
@@ -298,21 +306,32 @@ $(function () {
 					coupon: this.coupon,
 					voucher: this.voucher,
 					reward: this.reward
-				};
+				}));
 
+				data['order_data']['comment'] = $('.section-comments textarea').val();
 				data['captcha'] = $('[name="captcha"]').val();
 				data['g-recaptcha-response'] = $('[name="g-recaptcha-response"]').val();
-
-				window['_QuickCheckoutAjaxSave'] = this.ajax({
-					url: 'index.php?route=journal3/checkout/save' + (confirm ? '&confirm=true' : ''),
-					data: data,
-					success: function (json) {
-						window['_QuickCheckoutAjaxSave'] = null;
-						this.update(json, confirm);
-					}.bind(this)
-				});
+				
+				console.log("Button pressed?" + typeof _QuickCheckoutData.buttonpressed);
+				if(typeof _QuickCheckoutData.buttonpressed === 'undefined'){
+					window['_QuickCheckoutAjaxSave'] = this.ajax({
+						url: 'index.php?route=journal3/checkout/save' + (confirm ? '&confirm=true' : ''),
+						data: data,
+						success: function (json) {
+							window['_QuickCheckoutAjaxSave'] = null;
+							this.update(json, confirm);
+							console.log("update and success");
+						}.bind(this),
+						error: function (xhr, ajaxOptions, thrownError) {
+							//alert(thrownError + '\r\n' + xhr.statusText + '\r\n' + xhr.responseText);
+							console.log("error-reset");
+							window['_QuickCheckoutAjaxSave'] = null;
+						}
+					});
+				}
 			},
 			update: function (json, confirm) {
+				
 				if (json.response.redirect) {
 					window.location = json.response.redirect;
 				} else {
@@ -378,6 +397,11 @@ $(function () {
 							if ((this.quickCheckoutPaymentsPopup && this.quickCheckoutPaymentsPopup.includes(this.order_data.payment_code)) || !$btn.length) {
 								this.paymentIframe();
 							} else {
+								
+								/*++*/
+								this.$data['buttonpressed'] = true;
+								/*++*/
+								
 								if ($btn.attr('href')) {
 									window.location = $btn.attr('href');
 								} else {
@@ -471,13 +495,15 @@ $(function () {
 		watch: {
 			order_data: {
 				handler: function () {
-					var self = this;
+					/*var self = this;
 
 					clearTimeout(this.timeout);
 
 					this.timeout = setTimeout(function () {
 						self.save();
-					}, 700);
+					}, 700);*/
+					/*triggerLoadingOn();
+					this.save();*/
 				},
 				deep: true
 			}
@@ -501,4 +527,33 @@ function triggerLoadingOn() {
 function triggerLoadingOff() {
 	$('#quick-checkout-button-confirm, #button-login').button('reset');
 	loader('.quick-checkout-wrapper', false);
+}
+
+// OVERRIDE WATCHER!
+
+$( document ).ready(function() {	
+	if (typeof _QuickCheckoutData !== 'undefined') {
+		
+		setTimeout(listentopayment(), 500);
+		
+		function listentopayment(){
+			$(document).on('change', 'input[type="radio"]', function() {
+				setTimeout(saveit(), 500);
+			});
+		
+			function saveit(){
+				console.log("!! called by outise wathcer !!");
+				_QuickCheckout.save();
+			}
+
+		}
+	}
+});
+
+function wait(ms){
+   var start = new Date().getTime();
+   var end = start;
+   while(end < start + ms) {
+     end = new Date().getTime();
+  }
 }

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modification>
+	<name>Journal 3 checkout session handling bug fix</name>
+	<id>Journal 3 checkout session handling bug fix</id>
+	<code>J3CSHBF</code>
+	<version>3.x</version>
+	<author>G.Richard - renovatiomarketing.hu</author>
+
+	<file path="catalog/controller/journal3/checkout.php">
+		<operation error="log">
+			<search><![CDATA[public function index() {]]></search>
+				<add position="after"><![CDATA[
+		
+		/** FIX SHIT SESSION HANDLING **/
+		unset($this->session->data['j3_checkout_id']);
+		unset($this->session->data['payment_address']);
+		unset($this->session->data['shipping_address']);
+		unset($this->session->data['shipping_method']);
+		unset($this->session->data['payment_method']);
+		unset($this->session->data['order_id']);
+		/** FIX SHIT SESSION HANDLING **/ 
+						
+]]></add>
+		</operation>
+	</file>
+</modification>
+
+
